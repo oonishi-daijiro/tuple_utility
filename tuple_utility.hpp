@@ -1,6 +1,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace tuple_utility {
 
@@ -331,6 +332,28 @@ struct find_index<std::tuple<Any...>, T, index, true> {
 
 //******************************
 
+// assign
+//******************************
+template <tuple Tpl, template <typename...> typename T> struct assign;
+
+template <typename... Elm, template <typename...> typename T>
+struct assign<std::tuple<Elm...>, T> {
+  using type = T<Elm...>;
+};
+
+//******************************
+
+// infer
+//******************************
+template <typename T> struct infer;
+
+template <template <typename...> typename T, typename... TT>
+struct infer<T<TT...>> {
+  using type = std::tuple<TT...>;
+};
+
+//******************************
+
 // to_chainable
 //******************************
 template <tuple Tpl> struct to_chainable;
@@ -368,6 +391,8 @@ template <typename... Any> struct to_chainable<std::tuple<Any...>> {
 
   using reverse = to_chainable<typename reverse<type>::type>;
 
+  template <typename T> using infer = to_chainable<typename infer<T>::type>;
+
   // non monoid
 
   template <template <typename, typename> typename Reducer, typename Init>
@@ -381,6 +406,8 @@ template <typename... Any> struct to_chainable<std::tuple<Any...>> {
 
   template <template <typename> typename T>
   using find_index = find_index<type, T>;
+
+  template <template <typename...> typename T> using assign = assign<type, T>;
 };
 
 //******************************

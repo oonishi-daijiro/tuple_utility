@@ -302,6 +302,35 @@ template <tuple Tpl, template <typename> typename T> struct find {
   using type = std::tuple_element<0, typename fillter<Tpl, T>::type>::type;
 };
 
+//******************************
+
+// find_index
+//******************************
+template <tuple Tpl, template <typename> typename T, int index = 0,
+          bool found = false>
+struct find_index;
+
+template <typename... Elm, template <typename> typename T, int index>
+struct find_index<std::tuple<Elm...>, T, index, false> {
+private:
+  static_assert((std::tuple_size_v<std::tuple<Elm...>>) > index,
+                "no match type found.");
+  using at = std::tuple_element<index, std::tuple<Elm...>>::type;
+  static constexpr auto found = T<at>::value;
+
+public:
+  static constexpr auto value =
+      found ? index
+            : find_index<std::tuple<Elm...>, T, index + 1, found>::value;
+};
+
+template <typename... Any, template <typename> typename T, int index>
+struct find_index<std::tuple<Any...>, T, index, true> {
+  static constexpr auto value = index;
+};
+
+//******************************
+
 // to_chainable
 //******************************
 template <tuple Tpl> struct to_chainable;

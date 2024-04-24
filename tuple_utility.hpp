@@ -376,6 +376,9 @@ template <typename... Any> struct to_chainable<std::tuple<Any...>> {
   template <template <typename> typename T> using some = some<type, T>;
 
   template <typename T> using includes = includes<type, T>;
+
+  template <template <typename> typename T>
+  using find_index = find_index<type, T>;
 };
 
 //******************************

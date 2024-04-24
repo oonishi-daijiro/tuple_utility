@@ -296,7 +296,8 @@ template <typename... Any> struct flat_all<std::tuple<Any...>, false> {
 // find
 //******************************
 template <tuple Tpl, template <typename> typename T> struct find {
-  static_assert(std::tuple_size_v < fillter < Tpl, T >>> 0,
+
+  static_assert((std::tuple_size_v<typename fillter<Tpl, T>::type>) > 0,
                 "no match type found.");
   using type = std::tuple_element<0, typename fillter<Tpl, T>::type>::type;
 };

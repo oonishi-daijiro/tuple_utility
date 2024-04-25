@@ -90,6 +90,11 @@ struct reduce_impl<std::tuple<Accum, Last>, T, Init> {
   using type = T<Accum, Last>;
 };
 
+template <template <typename, typename> typename T, typename Init>
+struct reduce_impl<std::tuple<Init>, T, Init> {
+  using type = Init;
+};
+
 template <tuple Tpl, template <typename, typename> typename T, typename Init>
 struct reduce {
   using type =
@@ -157,24 +162,23 @@ template <tuple Tpl, int I, typename... T> struct insert {
 
 // reverse
 //******************************
-template <tuple Tpl, int I = std::tuple_size_v<Tpl> - 1, bool reach = false,
-          typename Accum = std::tuple<>>
-struct reverse;
-
-template <typename... Elm, int I, typename Accum>
-struct reverse<std::tuple<Elm...>, I, false, Accum> {
-private:
-  using at = std::tuple_element<I, std::tuple<Elm...>>::type;
-  using new_accum = push_back<Accum, at>::type;
-
-public:
-  using type = reverse<std::tuple<Elm...>, I - 1, I - 1 < 0, new_accum>::type;
+template <typename Accum, typename Current> struct reducer_reverse {
+  static constexpr auto index = Accum::index + 1;
+  static constexpr auto size = Accum::size;
+  using tpl = Accum::tpl;
+  using elm = std::tuple_element_t<size - index, typename Accum::tpl>;
+  using type = push_back<typename Accum::type, elm>::type;
 };
 
-template <typename... Elm, typename Accum>
-struct reverse<std::tuple<Elm...>, -1, true, Accum> {
-  using type = Accum;
+template <tuple Tpl> struct reducer_reverse_init {
+  static constexpr auto size = std::tuple_size_v<Tpl>;
+  static constexpr auto index = 0;
+  using tpl = Tpl;
+  using type = std::tuple<>;
 };
+
+template <tuple Tpl>
+using reverse = reduce<Tpl, reducer_reverse, reducer_reverse_init<Tpl>>::type;
 
 //******************************
 

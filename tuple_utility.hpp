@@ -1,7 +1,6 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 namespace tuple_utility {
 
@@ -26,7 +25,7 @@ template <typename T>
 concept has_value = requires() { T::value; };
 
 template <typename Tpl>
-concept tuple = requires() { is_tuple<Tpl>; };
+concept tuple = requires() { requires is_tuple<Tpl>; };
 //******************************
 
 // transform
@@ -181,25 +180,21 @@ struct reverse<std::tuple<Elm...>, -1, true, Accum> {
 
 // fillter
 //******************************
-template <tuple Tpl, template <typename> typename T,
-          typename Accum = std::tuple<>>
-struct fillter;
-template <typename Head, typename... Tail, template <typename> typename T,
-          typename Accum>
-struct fillter<std::tuple<Head, Tail...>, T, Accum> {
-private:
-  using elm =
-      std::conditional<T<Head>::value, std::tuple<Head>, std::tuple<>>::type;
-
-public:
-  using type =
-      fillter<std::tuple<Tail...>, T, typename concat<Accum, elm>::type>::type;
+template <typename Accum, typename Current> struct reducer_fillter {
+  using elm = std::conditional<Accum::template fillter<Current>::value,
+                               std::tuple<Current>, std::tuple<>>::type;
+  template <typename T> using fillter = Accum::template fillter<T>;
+  using type = concat<typename Accum::type, elm>::type;
 };
 
-template <template <typename> typename T, typename Accum>
-struct fillter<std::tuple<>, T, Accum> {
-  using type = Accum;
+template <template <typename> typename Fillter> struct reducer_fillter_init {
+  using type = std::tuple<>;
+  template <typename T> using fillter = Fillter<T>;
 };
+
+template <tuple Tpl, template <typename> typename Fillter>
+using fillter =
+    reduce<Tpl, reducer_fillter, reducer_fillter_init<Fillter>>::type;
 
 //******************************
 

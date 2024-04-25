@@ -51,34 +51,6 @@ struct concat<std::tuple<TplElm1...>, std::tuple<TplElm2...>> {
 
 //******************************
 
-// subtuple
-//******************************
-template <tuple Tpl, int I, int Size, int index = 0, bool reach = false,
-          typename Accum = std::tuple<>>
-struct subtuple;
-
-template <typename Head, typename... Tail, int I, int Size, int index,
-          typename Accum>
-struct subtuple<std::tuple<Head, Tail...>, I, Size, index, false, Accum> {
-private:
-  using Sub =
-      typename std::conditional<(Size > 0) ? (index >= I) : false,
-                                typename concat<Accum, std::tuple<Head>>::type,
-                                std::tuple<>>::type;
-
-public:
-  using type = typename subtuple<std::tuple<Tail...>, I, Size, index + 1,
-                                 (Size > 0) ? (index + 1 == (I + Size)) : true,
-                                 Sub>::type;
-};
-
-template <typename... Any, int I, int Size, int index, typename Sub>
-struct subtuple<std::tuple<Any...>, I, Size, index, true, Sub> {
-  using type = Sub;
-};
-
-//******************************
-
 // push_front
 //******************************
 template <tuple Tpl, typename... T> struct push_front;
@@ -124,6 +96,36 @@ struct reduce {
   using type =
       typename reduce_impl<typename push_front<Tpl, Init>::type, T, Init>::type;
 };
+
+//******************************
+
+// subtuple
+//******************************
+template <typename Accum, typename Current> struct reducer_subtuple {
+  static constexpr auto is_in_range =
+      Accum::start_index <= Accum::index &&
+      Accum::index < Accum::start_index + Accum::size;
+
+  using elm =
+      std::conditional<is_in_range, std::tuple<Current>, std::tuple<>>::type;
+
+  static constexpr auto start_index = Accum::start_index;
+  static constexpr auto index = Accum::index + 1;
+  static constexpr auto size = Accum::size;
+
+  using type = concat<typename Accum::type, elm>::type;
+};
+
+template <int I, int Size> struct reducer_subtuple_init {
+  static constexpr auto start_index = I;
+  static constexpr auto size = Size;
+  static constexpr auto index = 0;
+  using type = std::tuple<>;
+};
+
+template <tuple Tpl, int I, int Size>
+using subtuple =
+    reduce<Tpl, reducer_subtuple, reducer_subtuple_init<I, Size>>::type;
 
 //******************************
 
